@@ -1,0 +1,4 @@
+.tox/
+venmo_subscriptions.egg-info/
+db.sqlite3
+initial_users.csv
