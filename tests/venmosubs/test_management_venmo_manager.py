@@ -71,7 +71,7 @@ def bill(user, due_subscription):
     plan_cost = due_subscription.subscription
     return Bill.objects.create(user=user, subscription=plan_cost, amount=plan_cost.cost, date_transaction=due_subscription.date_billing_next)
 
-def test_manager_process_expired(manager, user, due_subscription, venmo_user):
+def test_manager_due_subscription(manager, user, due_subscription, venmo_user):
     """Basic test for handling expired subscription. Ensures bill is sent and persisted."""
     initial_date_billing_next = due_subscription.date_billing_next
     manager.process_subscriptions()
@@ -81,7 +81,7 @@ def test_manager_process_expired(manager, user, due_subscription, venmo_user):
     amount, note, venmo_id = manager.client.payment.request_money.call_args.args
 
     assert amount == float(due_subscription.subscription.cost)
-    assert user.first_name in note
+    assert note == "John's Test Plan subscription for February 2018"
     assert venmo_id == str(venmo_user.venmo_id)
 
     # Ensure Subscription and Bill data looks good.
@@ -97,6 +97,17 @@ def test_manager_process_expired(manager, user, due_subscription, venmo_user):
     assert bill.date_transaction == subscription.date_billing_next
 
     assert VenmoTransaction.objects.count() == 0
+
+def test_manager_due_subscription_end_of_month(manager, user, due_subscription, venmo_user):
+    # change due_subscription's next billing month to start at the end of last month
+    due_subscription.date_billing_next -= timedelta(days=5)
+    due_subscription.save()
+    manager.process_subscriptions()
+
+    # Confirm that venmo request_money was called as expected
+    manager.client.payment.request_money.assert_called_once()
+    _, note, _ = manager.client.payment.request_money.call_args.args
+    assert note == "John's Test Plan subscription for February 2018"
 
 
 def test_manager_process_expired_no_duplicate_bills(manager, due_subscription, venmo_user):

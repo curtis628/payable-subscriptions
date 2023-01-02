@@ -34,6 +34,15 @@ class VenmoManager(Manager):
             access_token = os.environ[TOKEN_KEY] if TOKEN_KEY in os.environ else getpass("Venmo Access Token: ")
             self.client = Client(access_token)
 
+    def _generate_note(self, sub):
+        plan_cost = sub.subscription
+        # if billing_next is close to the next month, we should use the next month's name for the note
+        note_month = sub.date_billing_next + timedelta(days=7)
+        note = (
+            f"{sub.user.first_name}'s {plan_cost.plan.plan_name} subscription for " + f"{note_month.strftime('%B %Y')}"
+        )
+        return note
+
     def _get_or_create_bill(self, sub):
         user = sub.user
         plan_cost = sub.subscription
@@ -49,10 +58,7 @@ class VenmoManager(Manager):
                 logger.warning(f"No VenmoAccount details for {user=}")
                 return False
 
-            note = (
-                f"{sub.user.first_name}'s {plan_cost.plan.plan_name} subscription for "
-                + f"{sub.date_billing_next.strftime('%B %Y')}"
-            )
+            note = self._generate_note(sub)
             logger.debug(f"Sending Venmo request with note: {note}")
             self.client.payment.request_money(float(amount_due), note, venmo_account.venmo_id)
             bill = Bill.objects.create(
