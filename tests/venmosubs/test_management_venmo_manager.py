@@ -46,7 +46,7 @@ def manager():
 
 @pytest.fixture
 def user(django_user_model):
-    return django_user_model.objects.create_user(username=TEST_USERNAME, first_name="John", last_name="Doe", email="jdoe@email.com", password="uncrackable:)")
+    return create_user_and_group(django_user_model)[0]
 
 
 @pytest.fixture
@@ -56,7 +56,7 @@ def venmo_user(django_user_model, user):
 
 @pytest.fixture
 def group(user):
-    group = Group.objects.create(name=TEST_GROUP)
+    group, _ = Group.objects.get_or_create(name=TEST_GROUP)
     group.user_set.add(user)
     return group
 
@@ -71,7 +71,7 @@ def bill(user, due_subscription):
     plan_cost = due_subscription.subscription
     return Bill.objects.create(user=user, subscription=plan_cost, amount=plan_cost.cost, date_transaction=due_subscription.date_billing_next)
 
-def test_manager_due_subscription(manager, user, due_subscription, venmo_user):
+def test_due_subscription(manager, user, due_subscription, venmo_user):
     """Basic test for handling expired subscription. Ensures bill is sent and persisted."""
     initial_date_billing_next = due_subscription.date_billing_next
     manager.process_subscriptions()
@@ -98,7 +98,7 @@ def test_manager_due_subscription(manager, user, due_subscription, venmo_user):
 
     assert VenmoTransaction.objects.count() == 0
 
-def test_manager_due_subscription_end_of_month(manager, user, due_subscription, venmo_user):
+def test_due_end_of_month(manager, due_subscription, venmo_user):
     # change due_subscription's next billing month to start at the end of last month
     due_subscription.date_billing_next -= timedelta(days=5)
     due_subscription.save()
@@ -110,13 +110,28 @@ def test_manager_due_subscription_end_of_month(manager, user, due_subscription, 
     assert note == "John's Test Plan subscription for February 2018"
 
 
-def test_manager_process_expired_no_duplicate_bills(manager, due_subscription, venmo_user):
+def test_due_no_duplicate_bills(manager, due_subscription, venmo_user):
     """Duplicate bills and venmo requests aren't created."""
     manager.process_subscriptions()
     manager.process_subscriptions()
 
     manager.client.payment.request_money.assert_called_once()
     assert Bill.objects.count() == 1
+
+def test_due_bills_sent_for_each_user(django_user_model, manager, user, group, due_subscription, venmo_user):
+    plan_cost = due_subscription.subscription
+
+    # Add another subscription to the same PlanCost
+    jane, _ =  create_user_and_group(django_user_model, first_name="Jane")
+    _ = create_due_subscription(jane, group, plan_cost)
+    assert models.PlanCost.objects.count() == 1
+    plan_cost = models.PlanCost.objects.first()
+    assert plan_cost.subscriptions.count() == 2
+    _ = create_venmo_user(django_user_model, user=jane)
+
+    manager.process_subscriptions()
+    assert manager.client.payment.request_money.call_count == 2
+    assert Bill.objects.count() == 2
 
 
 def _create_txn(amount, actor, target, date_completed=None, payment_type="pay", note="test payment"):

@@ -47,7 +47,9 @@ class VenmoManager(Manager):
         user = sub.user
         plan_cost = sub.subscription
         amount_due = plan_cost.cost
-        query_bill = Bill.objects.filter(Q(subscription=sub.subscription) & Q(date_transaction=sub.date_billing_next))
+        query_bill = Bill.objects.filter(
+            Q(user=user) & Q(subscription=sub.subscription) & Q(date_transaction=sub.date_billing_next)
+        )
         if query_bill.count() > 0:
             if query_bill.count() > 1:
                 logger.error(f"Found multiple bills for sub={sub}: {query_bill}")

@@ -72,11 +72,11 @@ def create_subscription(user, cost=None, group=None, date_start=None, date_next=
         cancelled=False,
     )
 
-def create_due_subscription(user, group=None):
+def create_due_subscription(user, group=None, plan_cost=None):
     """Creates a standard UserSubscription object due for billing."""
     date_start = datetime(2018, 1, 1, 1, 1, 1, tzinfo=timezone.utc)
     date_next = datetime(2018, 2, 1, 1, 1, 1, tzinfo=timezone.utc)
-    return create_subscription(user, None, group, date_start, date_next)
+    return create_subscription(user, plan_cost, group, date_start, date_next)
 
 
 def _setup_subscription(django_user_model):
