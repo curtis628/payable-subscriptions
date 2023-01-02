@@ -1,19 +1,19 @@
-# venmo-subscriptions
-A subscription management system integrated with Venmo requests and payments.
+# payable-subscriptions
+Integrates out-of-the-box payment processing for [django-flexible-subscriptions](https://github.com/studybuffalo/django-flexible-subscriptions).
 
-A combination of [django-flexible-subscriptions](https://github.com/studybuffalo/django-flexible-subscriptions)
-and [Venmo](https://github.com/mmohades/Venmo) python packages. This gives us a subscription and recurrent billing
-system that leverages Venmo as the payment provider.
+> Currently, only Venmo is supported.
 
-Quick start
------------
+This builds upon the subscription and recurrent billing from [django-flexible-subscriptions](https://github.com/studybuffalo/django-flexible-subscriptions)
+with supported payment vendors, such as Venmo.
 
-1. Add "venmosubs" to your `INSTALLED_APPS` setting like this:
+## Quick start
+
+1. Add "payablesubs" to your `INSTALLED_APPS` setting like this:
 
 ```
     INSTALLED_APPS = [
         ...
-        'venmosubs',
+        'payablesubs',
     ]
 ```
 
@@ -27,3 +27,7 @@ Quick start
 
 4. Start the development server and visit http://127.0.0.1:8000/subscriptions/dfs/subscriptions
    to view the subscriptions dashboard. NOTE: You need to create and login with a superuser account.
+
+
+## Libraries Used
+* [Venmo API](https://github.com/mmohades/Venmo)

@@ -8,7 +8,7 @@ from venmo_api import Client
 from django.utils import timezone
 from django.contrib.auth.models import User, Group
 from subscriptions.models import PlanTag, SubscriptionPlan, PlanCost, MONTH, ONCE, PlanList, PlanListDetail, UserSubscription
-from venmosubs.models import VenmoAccount
+from payablesubs.models import VenmoAccount
 
 TOKEN_KEY = "VENMO_ACCESS_TOKEN"
 

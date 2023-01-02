@@ -13,8 +13,8 @@ from datetime import timedelta
 
 
 from subscriptions import models
-from venmosubs.models import Bill, VenmoAccount, VenmoTransaction
-from venmosubs.management.commands.venmo_manager import VenmoManager
+from payablesubs.models import Bill, VenmoAccount, VenmoTransaction
+from payablesubs.management.commands.payable_manager import PayableManager
 
 import venmo_api.models.user
 from venmo_api.models.transaction import Transaction
@@ -42,7 +42,7 @@ def manager():
 
     mock_client.user.get_user_transactions = Mock(return_value=[])
 
-    return VenmoManager(mock_client)
+    return PayableManager(mock_client)
 
 @pytest.fixture
 def user(django_user_model):

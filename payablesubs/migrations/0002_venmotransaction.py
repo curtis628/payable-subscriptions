@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("subscriptions", "0007_alter_planlist_id_alter_planlistdetail_id_and_more"),
-        ("venmosubs", "0001_initial"),
+        ("payablesubs", "0001_initial"),
     ]
 
     operations = [

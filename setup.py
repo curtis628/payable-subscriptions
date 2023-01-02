@@ -6,12 +6,12 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="venmo-subscriptions",
+    name="payable-subscriptions",
     version="1.0.001",
-    url='https://github.com/curtis628/venmo-subscriptions',
+    url='https://github.com/curtis628/payable-subscriptions',
     author='Tyler Curtis',
     author_email="tjcurt@gmail.com",
-    description="A subscription-management system integrated with Venmo requests and payments",
+    description="Integrates out-of-the-box payment processing for django-flexible-subscriptions",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(exclude=["*.tests"]),

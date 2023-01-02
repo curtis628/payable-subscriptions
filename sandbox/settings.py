@@ -5,7 +5,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent
 
-DFS_MANAGER_CLASS = 'venmosubs.management.commands.venmo_manager.VenmoManager'
+DFS_MANAGER_CLASS = 'payablesubs.management.commands.payable_manager.PayableManager'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     # Your third party applications
     "subscriptions",
     # Local Apps
-    'venmosubs',
+    'payablesubs',
 ]
 
 MIDDLEWARE = [

@@ -10,7 +10,7 @@ import pytest
 from django.contrib.auth.models import Group
 
 from subscriptions import models
-from venmosubs.models import Bill, VenmoAccount, VenmoTransaction
+from payablesubs.models import Bill, VenmoAccount, VenmoTransaction
 
 TEST_GROUP = "test-group"
 TEST_PLAN = "Test Plan"

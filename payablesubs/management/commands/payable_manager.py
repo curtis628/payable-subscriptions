@@ -8,7 +8,7 @@ from django.db.models import Q
 from subscriptions.management.commands._manager import Manager
 from venmo_api import Client
 
-from venmosubs.models import Bill, VenmoAccount, VenmoTransaction
+from payablesubs.models import Bill, VenmoAccount, VenmoTransaction
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ def _txn_tostring(t):
     )
 
 
-class VenmoManager(Manager):
+class PayableManager(Manager):
     """Extends `Manager` functionality with Venmo payments and requests."""
 
     def __init__(self, client=None):
