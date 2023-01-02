@@ -103,13 +103,14 @@ def test_bill_creation_date_non_nullable(django_user_model):
 def test_venmo_transaction_creation(django_user_model):
     sub = _setup_subscription(django_user_model)
 
-    VenmoTransaction.objects.create(
+    txn = VenmoTransaction.objects.create(
         venmo_id=1234567890123456789,
         user=sub.user,
         subscription=sub.subscription,
         date_transaction=django_timezone.now(),
         amount=sub.subscription.cost
     )
+    assert str(sub.user) in str(txn)
 
 def test_venmo_transaction_venmo_id_non_nullable(django_user_model):
     sub = _setup_subscription(django_user_model)

@@ -15,6 +15,9 @@ class VenmoTransaction(SubscriptionTransaction):
         verbose_name="Venmo ID",
     )
 
+    def __str__(self):
+        return f"user={self.user} amount={self.amount} on {self.date_transaction} for sub={self.subscription}"
+
 
 class Bill(models.Model):
     """Track bills in a separate table - but it includes the same fields as the transaction."""
