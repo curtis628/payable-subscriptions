@@ -128,5 +128,5 @@ LOGGING = {
             "formatter": "standard",
         }
     },
-    "loggers": {"venmosubs": {"handlers": ["console"], "level": "DEBUG"}},
+    "loggers": {"payablesubs": {"handlers": ["console"], "level": "DEBUG"}},
 }

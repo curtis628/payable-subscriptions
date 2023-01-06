@@ -23,6 +23,7 @@ setup(
     install_requires=[
         'django>=4.0',
         'django-flexible-subscriptions>=0.15.1',
+        'venmo-api>=0.3.1'
     ],
     tests_require=[
         'pytest>=6.0.0',
