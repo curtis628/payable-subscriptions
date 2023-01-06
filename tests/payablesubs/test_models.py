@@ -10,7 +10,7 @@ import pytest
 from django.contrib.auth.models import Group
 
 from subscriptions import models
-from payablesubs.models import Bill, VenmoAccount, VenmoTransaction
+from payablesubs.models import Bill, VenmoAccount, Payment
 
 TEST_GROUP = "test-group"
 TEST_PLAN = "Test Plan"
@@ -100,54 +100,60 @@ def test_bill_creation_date_non_nullable(django_user_model):
     assert "NOT NULL constraint failed" in str(excinfo.value)
     assert "date_transaction" in str(excinfo.value)
 
-def test_venmo_transaction_creation(django_user_model):
+def test_cash_payment_creation(django_user_model):
     sub = _setup_subscription(django_user_model)
 
-    txn = VenmoTransaction.objects.create(
-        venmo_id=1234567890123456789,
-        user=sub.user,
+    cash_payment = Payment.objects.create(
+        host_payment_id=123456,
         subscription=sub.subscription,
-        date_transaction=django_timezone.now(),
-        amount=sub.subscription.cost
-    )
-    assert str(sub.user) in str(txn)
-
-def test_venmo_transaction_venmo_id_non_nullable(django_user_model):
-    sub = _setup_subscription(django_user_model)
-    with pytest.raises(IntegrityError) as excinfo:
-        VenmoTransaction.objects.create( # no venmo_id
-            user=sub.user,
-            subscription=sub.subscription,
-            date_transaction=django_timezone.now(),
-            amount=sub.subscription.cost
-        )
-
-    assert "NOT NULL constraint failed" in str(excinfo.value)
-    assert "venmo_id" in str(excinfo.value)
-
-def test_venmo_transaction_venmo_id_is_unique(django_user_model):
-    sub = _setup_subscription(django_user_model)
-    venmo_id=1234567890123456789
-
-    # First transaction persists fine... but second throws integrity exception
-    VenmoTransaction.objects.create(
-        venmo_id=venmo_id,
         user=sub.user,
-        subscription=sub.subscription,
+        amount=sub.subscription.cost,
+        method=Payment.PaymentMethod.CASH,
         date_transaction=django_timezone.now(),
-        amount=sub.subscription.cost
     )
-    with pytest.raises(IntegrityError) as excinfo:
-        VenmoTransaction.objects.create(
-            venmo_id=venmo_id,
-            user=sub.user,
-            subscription=sub.subscription,
-            date_transaction=django_timezone.now(),
-            amount=sub.subscription.cost
-        )
+    assert str(sub.user) in str(cash_payment)
 
+def test_venmo_duplicate_host_payment_id(django_user_model):
+    sub = _setup_subscription(django_user_model)
+    host_payment_id=123456
+    data = {"venmo_id": 123456789, "user": "test-venmo-user"}
+
+    Payment.objects.create(
+        host_payment_id=host_payment_id,
+        subscription=sub.subscription,
+        user=sub.user,
+        amount=sub.subscription.cost,
+        method=Payment.PaymentMethod.VENMO,
+        date_transaction=django_timezone.now(),
+        data=data,
+    )
+
+    # duplicate host_payment_id
+    with pytest.raises(IntegrityError) as excinfo:
+        Payment.objects.create(
+            host_payment_id=host_payment_id,
+            subscription=sub.subscription,
+            user=sub.user,
+            amount=sub.subscription.cost,
+            method=Payment.PaymentMethod.VENMO,
+            date_transaction=django_timezone.now(),
+            data=data,
+        )
     assert "UNIQUE constraint failed" in str(excinfo.value)
-    assert "venmo_id" in str(excinfo.value)
+    assert "host_payment_id" in str(excinfo.value)
+
+def test_payment_method_non_nullable(django_user_model):
+    sub = _setup_subscription(django_user_model)
+    with pytest.raises(IntegrityError) as excinfo:
+        Payment.objects.create( # no method
+                host_payment_id=123456,
+                subscription=sub.subscription,
+                user=sub.user,
+                amount=sub.subscription.cost,
+                date_transaction=django_timezone.now(),
+            )
+    assert "NOT NULL constraint failed" in str(excinfo.value)
+    assert "method" in str(excinfo.value)
 
 def test_venmo_user_creation(django_user_model):
     assert VenmoAccount.objects.all().count() == 0

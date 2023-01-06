@@ -13,7 +13,7 @@ from datetime import timedelta
 
 
 from subscriptions import models
-from payablesubs.models import Bill, VenmoAccount, VenmoTransaction
+from payablesubs.models import Bill, Payment
 from payablesubs.management.commands.payable_manager import PayableManager
 
 import venmo_api.models.user
@@ -96,7 +96,7 @@ def test_due_subscription(manager, user, due_subscription, venmo_user):
     assert bill.amount == subscription.subscription.cost
     assert bill.date_transaction == subscription.date_billing_next
 
-    assert VenmoTransaction.objects.count() == 0
+    assert Payment.objects.count() == 0
 
 def test_due_end_of_month(manager, due_subscription, venmo_user):
     # change due_subscription's next billing month to start at the end of last month
@@ -150,20 +150,21 @@ def _process_and_verify(manager, bill, mock_txn=None, expected_transactions=0):
     if mock_txn:
         manager.client.user.get_user_transactions = Mock(return_value=[mock_txn])
 
-    assert VenmoTransaction.objects.count() == 0
+    assert Payment.objects.count() == 0
     manager.process_subscriptions()
-    assert VenmoTransaction.objects.count() == expected_transactions
+    assert Payment.objects.count() == expected_transactions
 
     # If a transaction was matched, the sub's next billing date should be moved out
     latest_sub = models.UserSubscription.objects.get(id=sub.id)
     if expected_transactions:
-        txn = VenmoTransaction.objects.first()
+        txn = Payment.objects.first()
         assert txn.amount == mock_txn.amount
         assert txn.user == bill.user
         assert txn.subscription == bill.subscription
         assert txn.date_transaction == datetime.fromtimestamp(mock_txn.date_completed, tz=timezone.utc)
         assert txn.amount == bill.amount
-        assert txn.venmo_id == mock_txn.id
+        assert txn.host_payment_id == mock_txn.id
+        assert txn.data is not None and len(txn.data.keys()) > 0
 
         assert latest_sub.date_billing_next > initial_billing_next
     else:
@@ -223,13 +224,13 @@ def test_due_multiple_subscriptions_processed(manager, django_user_model):
 
     assert Bill.objects.count() == 0
     assert models.SubscriptionTransaction.objects.count() == 0
-    assert VenmoTransaction.objects.count() == 0
+    assert Payment.objects.count() == 0
 
     manager.process_subscriptions()
 
     assert Bill.objects.count() == 2
     assert manager.client.payment.request_money.call_count == 2 # sent out 2 Bills
-    assert VenmoTransaction.objects.count() == 1 # only matched/saved 1 transaction
+    assert Payment.objects.count() == 1 # only matched/saved 1 transaction
 
     # John paid... so his subscription was updated
     latest_john_sub = models.UserSubscription.objects.get(id=john_sub.id)
@@ -260,7 +261,7 @@ def test_due_shared_venmo_accounts(manager, django_user_model):
 
     manager.process_subscriptions()
     assert Bill.objects.count() == 2
-    assert VenmoTransaction.objects.count() == 2
+    assert Payment.objects.count() == 2
 
 def test_due_cancels_after_grace_period(manager, due_subscription, venmo_user):
     initial_date_billing_next = due_subscription.date_billing_next
@@ -282,7 +283,7 @@ def test_due_cancels_after_grace_period(manager, due_subscription, venmo_user):
     assert latest_sub.cancelled is True
 
     assert Bill.objects.count() == 1
-    assert VenmoTransaction.objects.count() == 0
+    assert Payment.objects.count() == 0
     manager.client.payment.request_money.assert_called_once()
 
 def test_due_resets_after_payment(manager, due_subscription, venmo_user):

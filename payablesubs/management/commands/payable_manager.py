@@ -8,7 +8,7 @@ from django.db.models import Q
 from subscriptions.management.commands._manager import Manager
 from venmo_api import Client
 
-from payablesubs.models import Bill, VenmoAccount, VenmoTransaction
+from payablesubs.models import Bill, Payment, VenmoAccount
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,20 @@ class PayableManager(Manager):
 
         return bill
 
+    @staticmethod
+    def _parse_txn_data(txn):
+        """Parse out `Payment.data` Venmo fields we want to persist in our backend."""
+        payer = txn.actor if txn.payment_type == "pay" else txn.target
+        return {
+            "venmo_id": str(payer.id),
+            "venmo_username": payer.username,
+            "amount": txn.amount,
+            "payment_type": txn.payment_type,
+            "date_created": txn.date_created,
+            "date_updated": txn.date_updated,
+            "date_completed": txn.date_completed,
+        }
+
     def _check_payments(self, sub, current_bill):
         """Looks through recent `txns` to see if `current_bill` has been paid already."""
         # populate recent venmo txns if we haven't already
@@ -94,9 +108,7 @@ class PayableManager(Manager):
                 f"{[_txn_tostring(t) for t in self.venmo_txns]}"
             )
 
-        last_payment = (
-            VenmoTransaction.objects.filter(subscription=sub.subscription).order_by("-date_transaction").first()
-        )
+        last_payment = Payment.objects.filter(user=sub.user).order_by("-date_transaction").first()
         search_begin_date = last_payment.date_transaction if last_payment else sub.date_billing_start
 
         venmo_acct = VenmoAccount.objects.filter(user=sub.user).first()
@@ -120,16 +132,18 @@ class PayableManager(Manager):
         )
 
         for t in matched_txns:
-            already_matched_txn = VenmoTransaction.objects.filter(venmo_id=t.id).first()
+            already_matched_txn = Payment.objects.filter(host_payment_id=t.id).first()
             if already_matched_txn:
-                logger.warning(f"Already matched VenmoTransaction {t.id=}: {_txn_tostring(t)}")
+                logger.warning(f"Already matched Payment {t.id=}: {_txn_tostring(t)}")
             else:
-                return VenmoTransaction(
-                    venmo_id=t.id,
-                    user=sub.user,
+                return Payment(
+                    host_payment_id=t.id,
                     subscription=sub.subscription,
-                    date_transaction=datetime.fromtimestamp(t.date_completed, tz=timezone.utc),
+                    user=sub.user,
                     amount=sub.subscription.cost,
+                    method=Payment.PaymentMethod.VENMO,
+                    date_transaction=datetime.fromtimestamp(t.date_completed, tz=timezone.utc),
+                    data=PayableManager._parse_txn_data(t),
                 )
         return None
 
@@ -147,7 +161,7 @@ class PayableManager(Manager):
             subscription.date_billing_next = next_billing
             subscription.date_billing_end = None
             subscription.save()
-            logger.info(f"{subscription} payment processed successfully")
+            logger.info(f"{subscription} payment={matched_txn} processed successfully")
         else:
             sub_end_date = subscription.date_billing_end
             grace_days = subscription.subscription.plan.grace_period

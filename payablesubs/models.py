@@ -6,17 +6,32 @@ from django.utils.translation import gettext_lazy as _
 from subscriptions.models import PlanCost, SubscriptionTransaction
 
 
-class VenmoTransaction(SubscriptionTransaction):
-    """Stores the Venmo-backend ID for payments, in addition to other `SubscriptionTransaction` fields."""
+class Payment(SubscriptionTransaction):
+    """Adding needed fields to django-flexible-subsciption's transaction model."""
 
-    venmo_id = models.PositiveBigIntegerField(
-        editable=False,
-        unique=True,
-        verbose_name="Venmo ID",
+    class PaymentMethod(models.TextChoices):
+        VENMO = "VENMO", _("Venmo")
+        CASH = "CASH", _("Cash")
+
+    host_payment_id = models.PositiveBigIntegerField(
+        editable=False, unique=True, help_text=_("the host's (i.e.: Venmo) identifier for this payment")
+    )
+
+    method = models.CharField(
+        max_length=6, help_text=_("the method of payment used"), choices=PaymentMethod.choices, default=None
+    )
+
+    data = models.JSONField(
+        help_text=_("property bag to store additional payment details in"),
+        blank=True,
+        null=True,
     )
 
     def __str__(self):
-        return f"user={self.user} amount={self.amount} on {self.date_transaction} for sub={self.subscription}"
+        return (
+            f"user={self.user} {self.method} ${self.amount} payment on "
+            f"{self.date_transaction} for plan_cost={self.subscription}"
+        )
 
 
 class Bill(models.Model):
@@ -33,14 +48,12 @@ class Bill(models.Model):
         help_text=_("the user that this subscription was billed for"),
         null=True,
         on_delete=models.SET_NULL,
-        # related_name="subscription_transactions",
     )
     subscription = models.ForeignKey(
         PlanCost,
         help_text=_("the plan costs that were billed"),
         null=True,
         on_delete=models.SET_NULL,
-        # related_name="transactions",
     )
     date_transaction = models.DateTimeField(
         help_text=_("the datetime the transaction was billed"),
