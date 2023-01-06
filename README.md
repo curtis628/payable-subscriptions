@@ -1,4 +1,9 @@
 # payable-subscriptions
+
+[![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![Code Style](https://img.shields.io/badge/code%20style-isort-blue.svg)](https://github.com/timothycrosley/isort)
+
+--------------
 Integrates out-of-the-box payment processing for [django-flexible-subscriptions](https://github.com/studybuffalo/django-flexible-subscriptions).
 
 > Currently, only Venmo is supported.
