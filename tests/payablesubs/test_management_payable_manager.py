@@ -18,7 +18,7 @@ from payablesubs.management.commands.payable_manager import PayableManager
 
 import venmo_api.models.user
 from venmo_api.models.transaction import Transaction
-from test_models import create_due_subscription, create_user_and_group, create_venmo_user, TEST_PLAN_GRACE_DAYS
+from test_models import create_due_subscription, create_user_and_group, create_venmo_user, create_cost, TEST_PLAN_GRACE_DAYS
 from django.conf import settings
 
 TEST_USERNAME = "test-subscriber"
@@ -107,6 +107,30 @@ def test_due_subscription_billing_disabled(manager, due_subscription, venmo_user
         settings.PAYABLESUBS_BILLING_ENABLED = True
 
     manager.client.payment.request_money.assert_not_called()
+
+def test_bills_with_different_plan_cost(django_user_model, manager):
+    john, group = create_user_and_group(django_user_model, first_name="John")
+    create_venmo_user(django_user_model, john)
+    due_sub = create_due_subscription(john, group=group)
+    plan = due_sub.subscription.plan
+
+    jane, _ = create_user_and_group(django_user_model, first_name="Jane")
+    create_venmo_user(django_user_model, jane)
+    jane_cost = create_cost(group, plan, amount=Decimal(10))
+    create_due_subscription(jane, group, jane_cost)
+
+    manager.process_subscriptions()
+    request_money_mock = manager.client.payment.request_money
+    assert request_money_mock.call_count == 2
+    call_1, call_2 = request_money_mock.call_args_list[0], request_money_mock.call_args_list[1]
+
+    amount, note, _ = call_1.args
+    assert amount == float(1.0)
+    assert note == "John's Test Plan subscription for February 2018"
+
+    amount, note, _ = call_2.args
+    assert amount == float(10.0)
+    assert note == "Jane's Test Plan subscription for February 2018"
 
 def test_due_end_of_month(manager, due_subscription, venmo_user):
     # change due_subscription's next billing month to start at the end of last month
