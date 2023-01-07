@@ -19,6 +19,7 @@ from payablesubs.management.commands.payable_manager import PayableManager
 import venmo_api.models.user
 from venmo_api.models.transaction import Transaction
 from test_models import create_due_subscription, create_user_and_group, create_venmo_user, TEST_PLAN_GRACE_DAYS
+from django.conf import settings
 
 TEST_USERNAME = "test-subscriber"
 TEST_GROUP = "test-group"
@@ -97,6 +98,15 @@ def test_due_subscription(manager, user, due_subscription, venmo_user):
     assert bill.date_transaction == subscription.date_billing_next
 
     assert Payment.objects.count() == 0
+
+def test_due_subscription_billing_disabled(manager, due_subscription, venmo_user):
+    settings.PAYABLESUBS_BILLING_ENABLED = False
+    try:
+        manager.process_subscriptions()
+    finally:
+        settings.PAYABLESUBS_BILLING_ENABLED = True
+
+    manager.client.payment.request_money.assert_not_called()
 
 def test_due_end_of_month(manager, due_subscription, venmo_user):
     # change due_subscription's next billing month to start at the end of last month

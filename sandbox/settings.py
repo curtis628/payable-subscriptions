@@ -1,6 +1,7 @@
 """Django settings file to get basic Django instance running."""
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent
@@ -17,6 +18,8 @@ SECRET_KEY = 'django-insecure-*!5vx+@1a%35cad9vzv9w5@1g$_i(8nd_97(^&%hr=h@&-()b+
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
+PAYABLESUBS_BILLING_ENABLED = os.getenv("PAYABLESUBS_BILLING_ENABLED", True)
 
 
 # Application definition

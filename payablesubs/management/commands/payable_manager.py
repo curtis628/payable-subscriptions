@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from getpass import getpass
 
+from django.conf import settings
 from django.db.models import Q
 from subscriptions.management.commands._manager import Manager
 from venmo_api import Client
@@ -61,8 +62,11 @@ class PayableManager(Manager):
                 return False
 
             note = self._generate_note(sub)
-            logger.debug(f"Sending Venmo request with note: {note}")
-            self.client.payment.request_money(float(amount_due), note, venmo_account.venmo_id)
+            if settings.PAYABLESUBS_BILLING_ENABLED:
+                logger.debug(f"Sending Venmo request with note: {note}")
+                self.client.payment.request_money(float(amount_due), note, venmo_account.venmo_id)
+            else:
+                logger.warning(f"Billing feature disabled. Not sending bill with note: {note}")
             bill = Bill.objects.create(
                 user=user, subscription=plan_cost, amount=amount_due, date_transaction=sub.date_billing_next
             )
