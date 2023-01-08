@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## In Development
+
+## 1.0.3
 * Improve charge request's `note` to include start/end dates for multi-month subscriptions
 
 ## 1.0.2
