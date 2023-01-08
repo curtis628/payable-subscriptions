@@ -7,7 +7,7 @@ from getpass import getpass
 from venmo_api import Client
 from django.utils import timezone
 from django.contrib.auth.models import User, Group
-from subscriptions.models import PlanTag, SubscriptionPlan, PlanCost, MONTH, ONCE, PlanList, PlanListDetail, UserSubscription
+from subscriptions.models import PlanTag, SubscriptionPlan, PlanCost, MONTH, YEAR, ONCE, PlanList, PlanListDetail, UserSubscription
 from payablesubs.models import VenmoAccount
 
 TOKEN_KEY = "VENMO_ACCESS_TOKEN"
@@ -38,6 +38,18 @@ if not std_plan:
         recurrence_period=1,
         recurrence_unit=MONTH,
         cost=Decimal(2)
+    )
+    PlanCost.objects.create(
+        plan=std_plan,
+        recurrence_period=6,
+        recurrence_unit=MONTH,
+        cost=Decimal(12)
+    )
+    PlanCost.objects.create(
+        plan=std_plan,
+        recurrence_period=1,
+        recurrence_unit=YEAR,
+        cost=Decimal(24)
     )
     plan_list, _= PlanList.objects.get_or_create(
         title="The Flimm",
@@ -100,8 +112,7 @@ with open('initial_users.csv', newline='') as csvfile:
             username_to_venmo_usernames[email] = venmo_username
 
 
-free_user_emails = ["lindy", "taryn"]
-for free_user_email in free_user_emails:
+for free_user_email in ["lindy", "taryn"]:
     user = User.objects.get(email__startswith=free_user_email)
     UserSubscription.objects.filter(user=user).delete()
     UserSubscription.objects.create(
@@ -113,8 +124,7 @@ for free_user_email in free_user_emails:
         date_billing_next=None
     )
 
-real_user_emails = ["tyler"]
-for real_user_email in real_user_emails:
+for real_user_email in ["tyler", "mal", "lauren", "will"]:
     user = User.objects.get(email__startswith=real_user_email)
     UserSubscription.objects.filter(user=user).delete()
     UserSubscription.objects.create(
