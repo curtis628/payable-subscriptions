@@ -37,11 +37,18 @@ class PayableManager(Manager):
 
     def _generate_note(self, sub):
         plan_cost = sub.subscription
-        # if billing_next is close to the next month, we should use the next month's name for the note
-        note_month = sub.date_billing_next + timedelta(days=7)
-        note = (
-            f"{sub.user.first_name}'s {plan_cost.plan.plan_name} subscription for " + f"{note_month.strftime('%B %Y')}"
-        )
+        bill_end = plan_cost.next_billing_datetime(sub.date_billing_next)
+
+        # Massaging billing start/end dates if they are close to month's boundaries
+        # i.e.: A monthly bill that starts on 2/28 should be for the month of Mar; not Feb.
+        adjusted_begin_date = sub.date_billing_next + timedelta(days=7)
+        adjusted_bill_end = bill_end - timedelta(days=7)
+        duration = adjusted_begin_date.strftime("%b")
+        diff = bill_end - sub.date_billing_next
+        if diff.days > 33:  # only include bill's end month if subscription is for > 1 months
+            duration += " - " + adjusted_bill_end.strftime("%b")
+        duration += adjusted_bill_end.strftime(" %Y")
+        note = f"{sub.user.first_name}'s {plan_cost.plan.plan_name} subscription for {duration}"
         return note
 
     def _get_or_create_bill(self, sub):

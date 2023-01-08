@@ -36,7 +36,8 @@ def create_venmo_user(django_user_model, user=None, venmo_username=None, venmo_i
     return VenmoAccount.objects.create(user=user, venmo_username=venmo_username, venmo_id=venmo_id)
 
 
-def create_cost(group, plan=None, amount=None, name="Test Plan", desc="This is just a test", grace_days=TEST_PLAN_GRACE_DAYS):
+def create_cost(group, plan=None, amount=None, name="Test Plan", desc="This is just a test", grace_days=TEST_PLAN_GRACE_DAYS,
+                recurrence_period=1, recurrence_unit=models.MONTH):
     """Creates and returns a PlanCost instance."""
     if not plan:
         plan = models.SubscriptionPlan.objects.create(
@@ -49,7 +50,7 @@ def create_cost(group, plan=None, amount=None, name="Test Plan", desc="This is j
         amount = Decimal(1)
 
     return models.PlanCost.objects.create(
-        plan=plan, recurrence_period=1, recurrence_unit=models.MONTH, cost=amount
+        plan=plan, recurrence_period=recurrence_period, recurrence_unit=recurrence_unit, cost=amount
     )
 
 

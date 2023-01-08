@@ -18,7 +18,7 @@ from payablesubs.management.commands.payable_manager import PayableManager
 
 import venmo_api.models.user
 from venmo_api.models.transaction import Transaction
-from test_models import create_due_subscription, create_user_and_group, create_venmo_user, create_cost, TEST_PLAN_GRACE_DAYS
+from test_models import create_due_subscription, create_user_and_group, create_venmo_user, create_cost, TEST_PLAN_GRACE_DAYS, create_subscription
 from django.conf import settings
 
 TEST_USERNAME = "test-subscriber"
@@ -82,7 +82,7 @@ def test_due_subscription(manager, user, due_subscription, venmo_user):
     amount, note, venmo_id = manager.client.payment.request_money.call_args.args
 
     assert amount == float(due_subscription.subscription.cost)
-    assert note == "John's Test Plan subscription for February 2018"
+    assert note == "John's Test Plan subscription for Feb 2018"
     assert venmo_id == str(venmo_user.venmo_id)
 
     # Ensure Subscription and Bill data looks good.
@@ -126,11 +126,11 @@ def test_bills_with_different_plan_cost(django_user_model, manager):
 
     amount, note, _ = call_1.args
     assert amount == float(1.0)
-    assert note == "John's Test Plan subscription for February 2018"
+    assert note == "John's Test Plan subscription for Feb 2018"
 
     amount, note, _ = call_2.args
     assert amount == float(10.0)
-    assert note == "Jane's Test Plan subscription for February 2018"
+    assert note == "Jane's Test Plan subscription for Feb 2018"
 
 def test_due_end_of_month(manager, due_subscription, venmo_user):
     # change due_subscription's next billing month to start at the end of last month
@@ -141,7 +141,23 @@ def test_due_end_of_month(manager, due_subscription, venmo_user):
     # Confirm that venmo request_money was called as expected
     manager.client.payment.request_money.assert_called_once()
     _, note, _ = manager.client.payment.request_money.call_args.args
-    assert note == "John's Test Plan subscription for February 2018"
+    assert note == "John's Test Plan subscription for Feb 2018"
+
+def test_generate_note(django_user_model, manager):
+    john, group = create_user_and_group(django_user_model, first_name="John")
+    jan1_2018 = datetime(2018, 1, 1, 1, 1, 1, tzinfo=timezone.utc)
+
+    every_6_months = create_cost(group, amount=Decimal(5), recurrence_period=6, recurrence_unit=models.MONTH)
+    plan = every_6_months.plan
+    every_year = create_cost(group, plan=plan, amount=Decimal(10), recurrence_period=1, recurrence_unit=models.YEAR)
+
+    john_sub = create_subscription(john, cost=every_6_months, group=group, date_start=jan1_2018, date_next=jan1_2018)
+    assert manager._generate_note(john_sub) == "John's Test Plan subscription for Jan - Jun 2018"
+
+    feb28_2022 = datetime(2022, 2, 28, 1, 1, 1, tzinfo=timezone.utc)
+    jane, _ = create_user_and_group(django_user_model, first_name="Jane")
+    jane_sub = create_subscription(jane, cost=every_year, group=group, date_start=feb28_2022, date_next=feb28_2022)
+    assert manager._generate_note(jane_sub) == "Jane's Test Plan subscription for Mar - Feb 2023"
 
 
 def test_due_no_duplicate_bills(manager, due_subscription, venmo_user):
