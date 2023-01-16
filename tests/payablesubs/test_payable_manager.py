@@ -14,7 +14,7 @@ from datetime import timedelta
 
 from subscriptions import models
 from payablesubs.models import Bill, Payment
-from payablesubs.management.commands.payable_manager import PayableManager
+from payablesubs.management.commands._payable_manager import PayableManager
 
 import venmo_api.models.user
 from venmo_api.models.transaction import Transaction
