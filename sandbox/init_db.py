@@ -90,7 +90,7 @@ with open('initial_users.csv', newline='') as csvfile:
     csv_reader = csv.reader(csvfile)
     for row in csv_reader:
         first_name, last_name, email, venmo_username = row
-        username=f"{first_name}_{last_name}".lower()
+        username=email
         user = User.objects.create_user(username, None, password)
         user.first_name = first_name
         user.last_name = last_name
