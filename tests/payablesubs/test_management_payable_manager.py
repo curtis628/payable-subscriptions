@@ -108,6 +108,35 @@ def test_due_subscription_billing_disabled(manager, due_subscription, venmo_user
 
     manager.client.payment.request_money.assert_not_called()
 
+def test_due_subscription_dry_run_enabled(manager, due_subscription, venmo_user):
+    initial_date_billing_next = due_subscription.date_billing_next
+    initial_date_billing_end = due_subscription.date_billing_end
+    assert initial_date_billing_next < django_timezone.now()
+    assert initial_date_billing_end is None
+    venmo_subscriber = _venmo_account_to_api_model(venmo_user)
+
+    amount = due_subscription.subscription.cost
+    mock_txn = _create_txn(amount, actor=venmo_subscriber, target=MOCK_PROFILE_VENMO_USER, date_completed=initial_date_billing_next)
+    manager.client.user.get_user_transactions = Mock(return_value=[mock_txn])
+
+    settings.PAYABLESUBS_DRY_RUN = True
+    try:
+        manager.process_subscriptions()
+    finally:
+        settings.PAYABLESUBS_DRY_RUN = False
+
+    # No payment request sent - and no Payment's persisted
+    manager.client.payment.request_money.assert_not_called()
+    assert Bill.objects.count() == 0
+    assert Payment.objects.count() == 0
+
+    # subscription hasn't changed
+    subscription = models.UserSubscription.objects.get(id=due_subscription.id)
+    assert subscription.active is True
+    assert subscription.cancelled is False
+    assert subscription.date_billing_next == initial_date_billing_next
+    assert subscription.date_billing_end == initial_date_billing_end
+
 def test_bills_with_different_plan_cost(django_user_model, manager):
     john, group = create_user_and_group(django_user_model, first_name="John")
     create_venmo_user(django_user_model, john)

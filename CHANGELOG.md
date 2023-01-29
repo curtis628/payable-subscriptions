@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## In Development
+* Add setting `PAYABLESUBS_DRY_RUN` to allow running without worrying it about
+  it affecting any data or sending payment requests.
 
 ## 1.0.3
 * Improve charge request's `note` to include start/end dates for multi-month subscriptions

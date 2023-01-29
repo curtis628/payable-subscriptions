@@ -20,6 +20,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 PAYABLESUBS_BILLING_ENABLED = os.getenv("PAYABLESUBS_BILLING_ENABLED", True)
+PAYABLESUBS_DRY_RUN = os.getenv("PAYABLESUBS_DRY_RUN", False)
 
 
 # Application definition

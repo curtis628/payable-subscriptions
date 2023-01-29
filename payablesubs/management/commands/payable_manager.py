@@ -69,14 +69,14 @@ class PayableManager(Manager):
                 return False
 
             note = self._generate_note(sub)
-            if settings.PAYABLESUBS_BILLING_ENABLED:
+            if settings.PAYABLESUBS_BILLING_ENABLED and not settings.PAYABLESUBS_DRY_RUN:
                 logger.debug(f"Sending Venmo request with note: {note}")
                 self.client.payment.request_money(float(amount_due), note, venmo_account.venmo_id)
             else:
                 logger.warning(f"Billing feature disabled. Not sending bill with note: {note}")
-            bill = Bill.objects.create(
-                user=user, subscription=plan_cost, amount=amount_due, date_transaction=sub.date_billing_next
-            )
+            bill = Bill(user=user, subscription=plan_cost, amount=amount_due, date_transaction=sub.date_billing_next)
+            if not settings.PAYABLESUBS_DRY_RUN:
+                bill.save()
 
         return bill
 
@@ -163,7 +163,9 @@ class PayableManager(Manager):
         logger.debug(f"Processing due {subscription=} {bill=}")
         matched_txn = self._check_payments(subscription, bill)
 
-        if matched_txn:
+        if settings.PAYABLESUBS_DRY_RUN:
+            logger.warning(f"Not updating subscription or saving matched {matched_txn} while in 'dry run' mode...")
+        elif matched_txn:
             # Update subscription details
             matched_txn.save()
             cost = subscription.subscription
