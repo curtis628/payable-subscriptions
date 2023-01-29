@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## In Development
+* Implement `add_subscription` custom command to facilitate adding new subscriptions
 * Add setting `PAYABLESUBS_DRY_RUN` to allow running without worrying it about
   it affecting any data or sending payment requests.
 
