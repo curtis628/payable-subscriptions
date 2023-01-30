@@ -6,12 +6,11 @@ from django.conf import settings
 from django.db.models import Q
 from subscriptions.management.commands._manager import Manager
 
+import payablesubs.clients.google as google
 import payablesubs.clients.venmo as venmo
 from payablesubs.models import Bill, Payment, VenmoAccount
 
 logger = logging.getLogger(__name__)
-
-TOKEN_KEY = "VENMO_ACCESS_TOKEN"
 
 
 def _txn_tostring(t):
@@ -25,11 +24,15 @@ def _txn_tostring(t):
 class PayableManager(Manager):
     """Extends `Manager` functionality with Venmo payments and requests."""
 
-    def __init__(self, venmo_client=None):
+    def __init__(self, venmo_client=None, google_client=None):
         self.venmo_client = venmo_client
         self.venmo_txns = []
         if not venmo_client:
             self.venmo_client = venmo.get_client()
+
+        self.google_client = google_client
+        if not google_client:
+            self.google_client = google.get_client()
 
     def _generate_note(self, sub):
         plan_cost = sub.subscription
@@ -178,3 +181,10 @@ class PayableManager(Manager):
             if not subscription.date_billing_end:
                 subscription.date_billing_end = end_dt
                 subscription.save()
+
+    def notify_expired(self, subscription):
+        # remove subscribed user of the associated label in Google contacts
+        email = subscription.user.email
+        logger.debug(f"Processing expired {subscription}: [{email=}]")
+        google.remove_contact_label(subscription.user, client=self.google_client)
+        logger.info(f"Successfully removed {email} from Google")

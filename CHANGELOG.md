@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## In Development
+* Integrate with Google APIs for managing contact group associated with active subscriptions.
 * Cleanup Venmo client initialization
   * Consolidate to `clients/venmo.py`
   * Remove env variable support in favor of `.credentials/venmo.token`

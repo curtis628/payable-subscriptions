@@ -19,8 +19,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-PAYABLESUBS_BILLING_ENABLED = os.getenv("PAYABLESUBS_BILLING_ENABLED", True)
-PAYABLESUBS_DRY_RUN = os.getenv("PAYABLESUBS_DRY_RUN", False)
+PAYABLESUBS_BILLING_ENABLED = eval(os.getenv("PAYABLESUBS_BILLING_ENABLED", "True"))
+PAYABLESUBS_DRY_RUN = eval(os.getenv("PAYABLESUBS_DRY_RUN", "False"))
+
+# contactGroupId (label) associated with active subscriptions. If None, don't integrate with google.
+PAYABLESUBS_GOOGLE_CONTACT_LABEL = os.getenv("PAYABLESUBS_GOOGLE_CONTACT_LABEL", None)
 
 
 # Application definition

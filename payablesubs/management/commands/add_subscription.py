@@ -10,6 +10,7 @@ from django.core.management.base import BaseCommand
 from django.utils.translation import gettext_lazy as _
 from subscriptions.models import SubscriptionPlan, UserSubscription
 
+import payablesubs.clients.google as google
 import payablesubs.clients.venmo as venmo
 from payablesubs.models import VenmoAccount
 
@@ -88,3 +89,5 @@ class Command(BaseCommand):
             logger.info(f"Created {venmo_acct}")
 
         logger.info(f"Created new '{new_sub}'")
+
+        google.add_contact_label(user)

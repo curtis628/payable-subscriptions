@@ -1,6 +1,5 @@
 """Provides reusable access to `venmo-api` client"""
 import logging
-import os
 from getpass import getpass
 from pathlib import Path
 

@@ -16,6 +16,7 @@ from subscriptions import models
 from payablesubs.models import Bill, Payment
 from payablesubs.management.commands._payable_manager import PayableManager
 
+import payablesubs.clients.google as google
 import venmo_api.models.user
 from venmo_api.models.transaction import Transaction
 from test_models import create_due_subscription, create_user_and_group, create_venmo_user, create_cost, TEST_PLAN_GRACE_DAYS, create_subscription
@@ -33,17 +34,16 @@ pytestmark = pytest.mark.django_db  # pylint: disable=invalid-name
 
 @pytest.fixture
 def manager():
-    mock_client = Mock()
+    mock_venmo = Mock()
+    mock_venmo.my_profile = Mock(return_value=MOCK_PROFILE_VENMO_USER)
+    mock_venmo.user = Mock()
 
-    mock_client.my_profile = Mock(return_value=MOCK_PROFILE_VENMO_USER)
-    mock_client.user = Mock()
+    mock_venmo.payment = Mock()
+    mock_venmo.payment.request_money = Mock(return_value=True)
+    mock_venmo.user.get_user_transactions = Mock(return_value=[])
 
-    mock_client.payment = Mock()
-    mock_client.payment.request_money = Mock(return_value=True)
-
-    mock_client.user.get_user_transactions = Mock(return_value=[])
-
-    return PayableManager(mock_client)
+    mock_google = Mock()
+    return PayableManager(venmo_client=mock_venmo, google_client=mock_google)
 
 @pytest.fixture
 def user(django_user_model):
@@ -364,6 +364,47 @@ def test_due_cancels_after_grace_period(manager, due_subscription, venmo_user):
     assert Bill.objects.count() == 1
     assert Payment.objects.count() == 0
     manager.venmo_client.payment.request_money.assert_called_once()
+
+    # google integration was disabled... so shouldn't have been called.
+    manager.google_client.people.assert_not_called()
+
+
+def _init_google_mocks(manager, contact_label, email):
+    mock_people = Mock()
+    manager.google_client.people = Mock(return_value=mock_people)
+
+    mock_search_contacts = Mock()
+    mock_people.searchContacts = Mock(return_value=mock_search_contacts)
+
+    mock_search_result = {
+        'results': [
+            {
+                'person': {
+                    'resourceName': 'people/1234',
+                }
+            }
+        ]
+    }
+    mock_search_contacts.execute = Mock(return_value=mock_search_result)
+
+
+def test_due_cancels_after_grace_period_google_enabled(manager, due_subscription, venmo_user):
+    # Initial process_subscriptions sets billing_end date, but doesn't expire it
+    manager.process_subscriptions()
+
+    # This process_subscriptions sees that billing_end date is past grace period, and will both
+    # expire it and remove contact label from Google (since enabled)
+    test_contact_label = "abcdefg"
+    google.GOOGLE_CONTACT_GROUP_ID = test_contact_label
+    _init_google_mocks(manager, test_contact_label, due_subscription.user.email)
+    try:
+        manager.process_subscriptions()
+    finally:
+        google.GOOGLE_CONTACT_GROUP_ID = None
+
+    # google integration was disabled... so shouldn't have been called.
+    manager.google_client.people().searchContacts.assert_called_once()
+    manager.google_client.contactGroups().members().modify().execute.assert_called_once()
 
 def test_due_resets_after_payment(manager, due_subscription, venmo_user):
     initial_date_billing_next = due_subscription.date_billing_next
