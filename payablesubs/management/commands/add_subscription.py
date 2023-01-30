@@ -18,7 +18,7 @@ from payablesubs.models import VenmoAccount
 logger = logging.getLogger(__name__)
 
 
-class AddSubscriptionCommand(BaseCommand):
+class Command(BaseCommand):
     """Django management command to add subscriptions via task runner."""
 
     help = "Automates adding a new user + subscription."

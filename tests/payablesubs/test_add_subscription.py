@@ -8,7 +8,7 @@ import venmo_api
 import uuid
 
 import pytest
-from payablesubs.management.commands.add_subscription import AddSubscriptionCommand
+from payablesubs.management.commands.add_subscription import Command
 from test_models import create_due_subscription, create_user_and_group, create_venmo_user, create_cost, TEST_PLAN_GRACE_DAYS, create_subscription
 from subscriptions.models import UserSubscription
 from payablesubs.models import VenmoAccount
@@ -32,7 +32,7 @@ def subscription(django_user_model):
 def command():
     mock_client = Mock()
     mock_client.user.get_user_by_username = Mock(return_value=MOCK_VENMO_USER)
-    return AddSubscriptionCommand(mock_client)
+    return Command(mock_client)
 
 @mock.patch('payablesubs.management.commands.add_subscription.getpass')
 def test_add_sub_no_venmo(mock_getpass_func, subscription, command):
