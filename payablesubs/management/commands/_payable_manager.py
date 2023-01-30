@@ -1,14 +1,12 @@
 """Provides OOTB support to use Venmo for processing and requesting payments"""
 import logging
-import os
 from datetime import datetime, timedelta, timezone
-from getpass import getpass
 
 from django.conf import settings
 from django.db.models import Q
 from subscriptions.management.commands._manager import Manager
-from venmo_api import Client
 
+import payablesubs.clients.venmo as venmo
 from payablesubs.models import Bill, Payment, VenmoAccount
 
 logger = logging.getLogger(__name__)
@@ -27,13 +25,11 @@ def _txn_tostring(t):
 class PayableManager(Manager):
     """Extends `Manager` functionality with Venmo payments and requests."""
 
-    def __init__(self, client=None):
-        self.client = client
+    def __init__(self, venmo_client=None):
+        self.venmo_client = venmo_client
         self.venmo_txns = []
-        if not client:
-            logger.debug("Initializing Venmo client...")
-            access_token = os.environ[TOKEN_KEY] if TOKEN_KEY in os.environ else getpass("Venmo Access Token: ")
-            self.client = Client(access_token)
+        if not venmo_client:
+            self.venmo_client = venmo.get_client()
 
     def _generate_note(self, sub):
         plan_cost = sub.subscription
@@ -71,7 +67,7 @@ class PayableManager(Manager):
             note = self._generate_note(sub)
             if settings.PAYABLESUBS_BILLING_ENABLED and not settings.PAYABLESUBS_DRY_RUN:
                 logger.debug(f"Sending Venmo request with note: {note}")
-                self.client.payment.request_money(float(amount_due), note, venmo_account.venmo_id)
+                self.venmo_client.payment.request_money(float(amount_due), note, venmo_account.venmo_id)
             else:
                 logger.warning(f"Billing feature disabled. Not sending bill with note: {note}")
             bill = Bill(user=user, subscription=plan_cost, amount=amount_due, date_transaction=sub.date_billing_next)
@@ -98,9 +94,9 @@ class PayableManager(Manager):
         """Looks through recent `txns` to see if `current_bill` has been paid already."""
         # populate recent venmo txns if we haven't already
         if not self.venmo_txns:
-            venmo_profile = self.client.my_profile()
+            venmo_profile = self.venmo_client.my_profile()
             logger.info(f"Populating recent transactions associated with {venmo_profile.username}...")
-            txns = self.client.user.get_user_transactions(venmo_profile.id)
+            txns = self.venmo_client.user.get_user_transactions(venmo_profile.id)
 
             logger.debug(f"Found {len(txns)} VENMO transactions.")
             # for t in txns:

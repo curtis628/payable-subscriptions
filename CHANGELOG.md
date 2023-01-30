@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## In Development
+* Cleanup Venmo client initialization
+  * Consolidate to `clients/venmo.py`
+  * Remove env variable support in favor of `.credentials/venmo.token`
 
 ## 1.0.5
 * Implement `add_subscription` custom command to facilitate adding new subscriptions

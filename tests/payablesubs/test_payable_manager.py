@@ -78,8 +78,8 @@ def test_due_subscription(manager, user, due_subscription, venmo_user):
     manager.process_subscriptions()
 
     # Confirm that venmo request_money was called as expected
-    manager.client.payment.request_money.assert_called_once()
-    amount, note, venmo_id = manager.client.payment.request_money.call_args.args
+    manager.venmo_client.payment.request_money.assert_called_once()
+    amount, note, venmo_id = manager.venmo_client.payment.request_money.call_args.args
 
     assert amount == float(due_subscription.subscription.cost)
     assert note == "John's Test Plan subscription for Feb 2018"
@@ -106,7 +106,7 @@ def test_due_subscription_billing_disabled(manager, due_subscription, venmo_user
     finally:
         settings.PAYABLESUBS_BILLING_ENABLED = True
 
-    manager.client.payment.request_money.assert_not_called()
+    manager.venmo_client.payment.request_money.assert_not_called()
 
 def test_due_subscription_dry_run_enabled(manager, due_subscription, venmo_user):
     initial_date_billing_next = due_subscription.date_billing_next
@@ -117,7 +117,7 @@ def test_due_subscription_dry_run_enabled(manager, due_subscription, venmo_user)
 
     amount = due_subscription.subscription.cost
     mock_txn = _create_txn(amount, actor=venmo_subscriber, target=MOCK_PROFILE_VENMO_USER, date_completed=initial_date_billing_next)
-    manager.client.user.get_user_transactions = Mock(return_value=[mock_txn])
+    manager.venmo_client.user.get_user_transactions = Mock(return_value=[mock_txn])
 
     settings.PAYABLESUBS_DRY_RUN = True
     try:
@@ -126,7 +126,7 @@ def test_due_subscription_dry_run_enabled(manager, due_subscription, venmo_user)
         settings.PAYABLESUBS_DRY_RUN = False
 
     # No payment request sent - and no Payment's persisted
-    manager.client.payment.request_money.assert_not_called()
+    manager.venmo_client.payment.request_money.assert_not_called()
     assert Bill.objects.count() == 0
     assert Payment.objects.count() == 0
 
@@ -149,7 +149,7 @@ def test_bills_with_different_plan_cost(django_user_model, manager):
     create_due_subscription(jane, group, jane_cost)
 
     manager.process_subscriptions()
-    request_money_mock = manager.client.payment.request_money
+    request_money_mock = manager.venmo_client.payment.request_money
     assert request_money_mock.call_count == 2
     call_1, call_2 = request_money_mock.call_args_list[0], request_money_mock.call_args_list[1]
 
@@ -168,8 +168,8 @@ def test_due_end_of_month(manager, due_subscription, venmo_user):
     manager.process_subscriptions()
 
     # Confirm that venmo request_money was called as expected
-    manager.client.payment.request_money.assert_called_once()
-    _, note, _ = manager.client.payment.request_money.call_args.args
+    manager.venmo_client.payment.request_money.assert_called_once()
+    _, note, _ = manager.venmo_client.payment.request_money.call_args.args
     assert note == "John's Test Plan subscription for Feb 2018"
 
 def test_generate_note(django_user_model, manager):
@@ -194,7 +194,7 @@ def test_due_no_duplicate_bills(manager, due_subscription, venmo_user):
     manager.process_subscriptions()
     manager.process_subscriptions()
 
-    manager.client.payment.request_money.assert_called_once()
+    manager.venmo_client.payment.request_money.assert_called_once()
     assert Bill.objects.count() == 1
 
 def test_due_bills_sent_for_each_user(django_user_model, manager, user, group, due_subscription, venmo_user):
@@ -209,7 +209,7 @@ def test_due_bills_sent_for_each_user(django_user_model, manager, user, group, d
     _ = create_venmo_user(django_user_model, user=jane)
 
     manager.process_subscriptions()
-    assert manager.client.payment.request_money.call_count == 2
+    assert manager.venmo_client.payment.request_money.call_count == 2
     assert Bill.objects.count() == 2
 
 
@@ -227,7 +227,7 @@ def _process_and_verify(manager, bill, mock_txn=None, expected_transactions=0):
     sub = bill.subscription.subscriptions.first()
     initial_billing_next = sub.date_billing_next
     if mock_txn:
-        manager.client.user.get_user_transactions = Mock(return_value=[mock_txn])
+        manager.venmo_client.user.get_user_transactions = Mock(return_value=[mock_txn])
 
     assert Payment.objects.count() == 0
     manager.process_subscriptions()
@@ -299,7 +299,7 @@ def test_due_multiple_subscriptions_processed(manager, django_user_model):
     john_charge_match = _create_txn(john_sub.subscription.cost, payment_type="charge", actor=MOCK_PROFILE_VENMO_USER, target=john_venmo_api, date_completed=john_sub.date_billing_next)
     # *We* paid Jane, which shouldn't match (and so subscription isn't paid yet)
     jane_pay_nomatch = _create_txn(jane_sub.subscription.cost, payment_type="pay", actor=MOCK_PROFILE_VENMO_USER, target=jane_venmo_api, date_completed=jane_sub.date_billing_next)
-    manager.client.user.get_user_transactions = Mock(return_value=[john_charge_match, jane_pay_nomatch])
+    manager.venmo_client.user.get_user_transactions = Mock(return_value=[john_charge_match, jane_pay_nomatch])
 
     assert Bill.objects.count() == 0
     assert models.SubscriptionTransaction.objects.count() == 0
@@ -308,7 +308,7 @@ def test_due_multiple_subscriptions_processed(manager, django_user_model):
     manager.process_subscriptions()
 
     assert Bill.objects.count() == 2
-    assert manager.client.payment.request_money.call_count == 2 # sent out 2 Bills
+    assert manager.venmo_client.payment.request_money.call_count == 2 # sent out 2 Bills
     assert Payment.objects.count() == 1 # only matched/saved 1 transaction
 
     # John paid... so his subscription was updated
@@ -320,7 +320,7 @@ def test_due_multiple_subscriptions_processed(manager, django_user_model):
     assert initial_jane_billing_next == latest_jane_sub.date_billing_next
 
     # We only called out to Venmo to get transactions once (and cached result)
-    manager.client.user.get_user_transactions.assert_called_once()
+    manager.venmo_client.user.get_user_transactions.assert_called_once()
 
 def test_due_shared_venmo_accounts(manager, django_user_model):
     """In this test, John and Jane share the same venmo username! Ensure payments processed as expected."""
@@ -336,7 +336,7 @@ def test_due_shared_venmo_accounts(manager, django_user_model):
 
     john_charge_match = _create_txn(john_sub.subscription.cost, payment_type="charge", actor=MOCK_PROFILE_VENMO_USER, target=shared_venmo_api, date_completed=john_sub.date_billing_next, note="john-payment")
     jane_charge_match = _create_txn(jane_sub.subscription.cost, payment_type="charge", actor=MOCK_PROFILE_VENMO_USER, target=shared_venmo_api, date_completed=jane_sub.date_billing_next, note="jane-payment")
-    manager.client.user.get_user_transactions = Mock(return_value=[john_charge_match, jane_charge_match])
+    manager.venmo_client.user.get_user_transactions = Mock(return_value=[john_charge_match, jane_charge_match])
 
     manager.process_subscriptions()
     assert Bill.objects.count() == 2
@@ -363,7 +363,7 @@ def test_due_cancels_after_grace_period(manager, due_subscription, venmo_user):
 
     assert Bill.objects.count() == 1
     assert Payment.objects.count() == 0
-    manager.client.payment.request_money.assert_called_once()
+    manager.venmo_client.payment.request_money.assert_called_once()
 
 def test_due_resets_after_payment(manager, due_subscription, venmo_user):
     initial_date_billing_next = due_subscription.date_billing_next

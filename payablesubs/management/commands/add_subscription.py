@@ -1,7 +1,6 @@
 """Django management command to add subscriptions via task runner."""
 # see: https://docs.djangoproject.com/en/4.1/howto/custom-management-commands/
 import logging
-import os
 from datetime import date
 from decimal import Decimal
 from getpass import getpass
@@ -10,9 +9,8 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.utils.translation import gettext_lazy as _
 from subscriptions.models import SubscriptionPlan, UserSubscription
-from venmo_api import Client
 
-from payablesubs.management.commands._payable_manager import TOKEN_KEY
+import payablesubs.clients.venmo as venmo
 from payablesubs.models import VenmoAccount
 
 logger = logging.getLogger(__name__)
@@ -23,12 +21,10 @@ class Command(BaseCommand):
 
     help = "Automates adding a new user + subscription."
 
-    def __init__(self, client=None):
-        self.client = client
-        if not client:
-            logger.debug("Initializing Venmo client...")
-            access_token = os.environ[TOKEN_KEY] if TOKEN_KEY in os.environ else getpass("Venmo Access Token: ")
-            self.client = Client(access_token)
+    def __init__(self, venmo_client=None):
+        self.venmo_client = venmo_client
+        if not venmo_client:
+            self.venmo_client = venmo.get_client()
 
     def add_arguments(self, parser):
         parser.add_argument("first_name")
@@ -87,7 +83,7 @@ class Command(BaseCommand):
 
         if venmo_username:
             logger.debug(f"Storing {user}'s {venmo_username=} ...")
-            from_venmo = self.client.user.get_user_by_username(venmo_username)
+            from_venmo = self.venmo_client.user.get_user_by_username(venmo_username)
             venmo_acct = VenmoAccount.objects.create(user=user, venmo_username=venmo_username, venmo_id=from_venmo.id)
             logger.info(f"Created {venmo_acct}")
 
