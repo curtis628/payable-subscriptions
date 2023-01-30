@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="payable-subscriptions",
-    version="1.0.3",
+    version="1.0.4",
     url='https://github.com/curtis628/payable-subscriptions',
     author='Tyler Curtis',
     author_email="tjcurt@gmail.com",
