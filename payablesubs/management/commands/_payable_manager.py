@@ -17,8 +17,8 @@ TOKEN_KEY = "VENMO_ACCESS_TOKEN"
 def _txn_tostring(t):
     """Helper __str__ method to print out Venmo `Transaction` API model object passed in `t`."""
     return (
-        f"{t.actor.username} {t.payment_type} {t.amount} to {t.target.username} for "
-        f"'{t.note}' on {datetime.fromtimestamp(t.date_completed, tz=timezone.utc)}"
+        f"{t.actor.username:19} {t.payment_type:6} {t.amount:6} to {t.target.username:19} "
+        f"on {datetime.fromtimestamp(t.date_completed, tz=timezone.utc)} for '{t.note}'"
     )
 
 
@@ -110,10 +110,8 @@ class PayableManager(Manager):
                 if (t.payment_type == "pay" and t.target.username == venmo_profile.username)
                 or (t.payment_type == "charge" and t.actor.username == venmo_profile.username)
             ]
-            logger.debug(
-                f"{len(self.venmo_txns)} / {len(txns)} from VENMO are payments to us.\n"
-                f"{[_txn_tostring(t) for t in self.venmo_txns]}"
-            )
+            txn_strs = [f"{_txn_tostring(t)}" for t in self.venmo_txns]
+            logger.debug(f"{len(self.venmo_txns)} / {len(txns)} from VENMO are payments to us.\n" "\n".join(txn_strs))
 
         last_payment = Payment.objects.filter(user=sub.user).order_by("-date_transaction").first()
         search_begin_date = last_payment.date_transaction if last_payment else sub.date_billing_start
