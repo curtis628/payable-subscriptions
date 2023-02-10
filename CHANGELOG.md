@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## In Development
+
+## 1.0.6
 * Integrate with Google APIs for managing contact group associated with active subscriptions.
 * Cleanup Venmo client initialization
   * Consolidate to `clients/venmo.py`
