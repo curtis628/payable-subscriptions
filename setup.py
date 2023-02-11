@@ -23,7 +23,10 @@ setup(
     install_requires=[
         'django>=4.0',
         'django-flexible-subscriptions>=0.15.1',
-        'venmo-api>=0.3.1'
+        'venmo-api>=0.3.1',
+        'google-api-python-client>=2.74.0',
+        'google-auth-httplib2>=0.1.0',
+        'google-auth-oauthlib>=0.8.0',
     ],
     tests_require=[
         'pytest>=6.0.0',
