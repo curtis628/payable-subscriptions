@@ -2,11 +2,12 @@
 
 from pathlib import Path
 import os
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent
 
-DFS_MANAGER_CLASS = 'payablesubs.management.commands.payable_manager.PayableManager'
+DFS_MANAGER_CLASS = 'payablesubs.management.commands._payable_manager.PayableManager'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -137,3 +138,8 @@ LOGGING = {
     },
     "loggers": {"payablesubs": {"handlers": ["console"], "level": "DEBUG"}},
 }
+
+print(
+    f"Running payablesubs in sandbox-mode.\n{BASE_DIR=}\n{PAYABLESUBS_BILLING_ENABLED=}\n{PAYABLESUBS_DRY_RUN=}",
+    file=sys.stderr,
+)
