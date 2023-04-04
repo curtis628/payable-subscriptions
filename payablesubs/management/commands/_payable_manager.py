@@ -114,7 +114,8 @@ class PayableManager(Manager):
                 or (t.payment_type == "charge" and t.actor.username == venmo_profile.username)
             ]
             txn_strs = [f"{_txn_tostring(t)}" for t in self.venmo_txns]
-            logger.debug(f"{len(self.venmo_txns)} / {len(txns)} from VENMO are payments to us.\n" "\n".join(txn_strs))
+            big_txn_str = "\n".join(txn_strs)
+            logger.debug(f"{len(self.venmo_txns)} / {len(txns)} from VENMO are payments to us.\n{big_txn_str}")
 
         last_payment = Payment.objects.filter(user=sub.user).order_by("-date_transaction").first()
         search_begin_date = last_payment.date_transaction if last_payment else sub.date_billing_start

@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## In Development
+* Improved log formatting of applicable Venmo transactions
 
 ## 1.0.6
 * Integrate with Google APIs for managing contact group associated with active subscriptions.
