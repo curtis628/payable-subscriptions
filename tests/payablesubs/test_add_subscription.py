@@ -1,8 +1,8 @@
-"""Tests for the _venmo_manager module."""
+"""Tests for the add_subscriptions module."""
 import unittest
 from unittest import mock
 from unittest.mock import Mock
-from datetime import date
+from datetime import datetime
 from decimal import Decimal
 import venmo_api
 import uuid
@@ -44,7 +44,7 @@ def test_add_sub_no_venmo(mock_getpass_func, subscription, command):
         "last_name": "Doe",
         "email": "janedoe@email.com",
         "plan": "Test Plan",
-        "start_date": date.fromisoformat("2022-01-15"),
+        "start_date": datetime.fromisoformat("2022-01-15"),
         "cost": None,
         "venmo_username": None,
     }
@@ -62,7 +62,7 @@ def test_add_sub_with_venmo(mock_getpass_func, subscription, command):
         "last_name": "Doe",
         "email": "janedoe@email.com",
         "plan": "Test Plan",
-        "start_date": date.fromisoformat("2022-01-15"),
+        "start_date": datetime.fromisoformat("2022-01-15"),
         "cost": None,
         "venmo_username": MOCK_VENMO_USERNAME,
     }
@@ -82,7 +82,7 @@ def test_add_sub_wrong_cost(mock_getpass_func, subscription, command):
         "last_name": "Doe",
         "email": "janedoe@email.com",
         "plan": "Test Plan",
-        "start_date": date.fromisoformat("2022-01-15"),
+        "start_date": datetime.fromisoformat("2022-01-15"),
         "cost": Decimal(2), # No PlanCost with $2 amount
         "venmo_username": None,
     }
@@ -99,7 +99,7 @@ def test_add_sub_right_cost(mock_getpass_func, subscription, command):
         "last_name": "Doe",
         "email": "janedoe@email.com",
         "plan": "Test Plan",
-        "start_date": date.fromisoformat("2022-01-15"),
+        "start_date": datetime.fromisoformat("2022-01-15"),
         "cost": Decimal(1), # Matches
         "venmo_username": None,
     }
