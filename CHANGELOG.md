@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## In Development
+
+## 1.0.7
 * Implement `print_subscriptions` custom command for printing subscription reports
 * Improved log formatting of applicable Venmo transactions
 * Created `refresh-tokens.sh` (though it's hidden from source-control under `./credentials` folder)
@@ -30,5 +32,4 @@
   This is helpful during testing...
 
 ## 1.0.1
-
 * Initial release!
