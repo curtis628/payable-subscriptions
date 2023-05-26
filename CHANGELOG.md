@@ -1,8 +1,10 @@
 # CHANGELOG
 
 ## In Development
+* Implement `print_subscriptions` custom command for printing subscription reports
 * Improved log formatting of applicable Venmo transactions
 * Created `refresh-tokens.sh` (though it's hidden from source-control under `./credentials` folder)
+  * NOTE: Google client now leveraging Google Workspace
 
 ## 1.0.6
 * Integrate with Google APIs for managing contact group associated with active subscriptions.
