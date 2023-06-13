@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## In Development
+* Incorporate email support to `print_subscriptions` custom command
+* Use `America/Los_Angeles` timezone for user interface
 
 ## 1.0.7
 * Implement `print_subscriptions` custom command for printing subscription reports

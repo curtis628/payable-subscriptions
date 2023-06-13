@@ -18,5 +18,6 @@ def test_print_subscriptions(command, subscription):
     args = {
         "cost": "ALL",
         "include_inactive": False,
+        "email_to": None,
     }
     command.handle(**args)

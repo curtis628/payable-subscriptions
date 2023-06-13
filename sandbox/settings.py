@@ -8,6 +8,7 @@ import sys
 BASE_DIR = Path(__file__).resolve().parent
 
 DFS_MANAGER_CLASS = 'payablesubs.management.commands._payable_manager.PayableManager'
+DFS_ENABLE_ADMIN = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -108,11 +109,20 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Los_Angeles'
 
 USE_I18N = True
 
 USE_TZ = True
+
+# Email
+# https://docs.djangoproject.com/en/4.2/topics/email/
+# https://docs.djangoproject.com/en/4.2/ref/settings/#email-host
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD") #the key or app password here
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
 
 # Static files (CSS, JavaScript, Images)
